@@ -1,42 +1,90 @@
-import { declareIndexPlugin, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
+import { declareIndexPlugin, ReactRNPlugin } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
+import { bookSlots, highlightSlots, powerups, settings, storage } from './consts';
+import { fetchFromExportApi as getReadwiseBooks } from '../lib/readwise';
+import { importBooksAndHighlights } from '../lib/import';
 
 async function onActivate(plugin: ReactRNPlugin) {
-  // Register settings
   await plugin.settings.registerStringSetting({
-    id: 'name',
-    title: 'What is your Name?',
-    defaultValue: 'Bob',
+    id: settings.apiKey,
+    title: 'Readwise API Key',
+    defaultValue: '',
+    description: 'Readwise API key acquired from readwise.io/access_token',
   });
 
-  await plugin.settings.registerBooleanSetting({
-    id: 'pizza',
-    title: 'Do you like pizza?',
-    defaultValue: true,
-  });
+  await plugin.app.registerPowerup(
+    'Readwise Book',
+    powerups.book,
+    'Represents a book from Readwise',
+    {
+      slots: [
+        {
+          code: bookSlots.bookId,
+          name: 'Book ID',
+          // TODO: make this true
+          hidden: false,
+        },
+        {
+          code: bookSlots.author,
+          name: 'Author',
+        },
+        {
+          code: bookSlots.image,
+          name: 'Image',
+        },
+      ],
+    }
+  );
 
-  await plugin.settings.registerNumberSetting({
-    id: 'favorite-number',
-    title: 'What is your favorite number?',
-    defaultValue: 42,
-  });
+  await plugin.app.registerPowerup(
+    'Readwise Highlight',
+    powerups.book,
+    'Represents a highlight from Readwise',
+    {
+      slots: [
+        {
+          code: highlightSlots.highlightId,
+          name: 'Highlight ID',
+          // TODO: make this true
+          hidden: false,
+        },
+      ],
+    }
+  );
 
-  // A command that inserts text into the editor if focused.
-  await plugin.app.registerCommand({
-    id: 'editor-command',
-    name: 'Editor Command',
-    action: async () => {
-      plugin.editor.insertPlainText('Hello World!');
-    },
-  });
+  const syncHighlights = async () => {
+    const apiKey = await plugin.settings.getSetting<string>(settings.apiKey);
+    if (!apiKey) {
+      const msg = 'No Readwise API key set. Please set one in the settings.';
+      console.log(msg);
+      plugin.app.toast(msg);
+      return;
+    }
 
-  // Show a toast notification to the user.
-  await plugin.app.toast("I'm a toast!");
+    const lastSync = await plugin.storage.getSynced<number>(storage.lastSync);
+    try {
+      const books = await getReadwiseBooks(apiKey, lastSync);
+      if (books && books.length > 0) {
+        await importBooksAndHighlights(plugin, books);
+      }
+      await plugin.storage.setSynced(storage.lastSync, new Date().getTime());
+    } catch (e) {
+      console.log(e);
+      plugin.app.toast('Failed to sync highlights.');
+    }
+  };
 
-  // Register a sidebar widget.
-  await plugin.app.registerWidget('sample_widget', WidgetLocation.RightSidebar, {
-    dimensions: { height: 'auto', width: '100%' },
+  let timeout: NodeJS.Timeout | undefined;
+
+  plugin.track(async (rp) => {
+    const apiKey = await rp.settings.getSetting<string>(settings.apiKey);
+    if (apiKey) {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(syncHighlights, 1000 * 10);
+    }
   });
 }
 

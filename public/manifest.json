@@ -1,22 +1,21 @@
 {
+  "author": "Jamesb",
+  "name": "Readwise Sync",
+  "description": "Sync your Readwise highlights with RemNote",
+  "enableOnMobile": true,
+  "id": "Jamesb-qb7y5il",
   "manifestVersion": 1,
-  "id": "plugin_template",
-  "name": "Plugin Template",
-  "author": "remnote",
-  "repoUrl": "",
+  "repoUrl": "https://github.com/bjsi/remnote-readwise",
   "version": {
     "major": 0,
     "minor": 0,
     "patch": 1
   },
-  "theme": [],
-  "enableOnMobile": false,
-  "description": "",
   "requestNative": false,
   "requiredScopes": [
     {
       "type": "All",
-      "level": "Read"
+      "level": "ReadCreateModify"
     }
   ]
 }
