@@ -8,15 +8,16 @@ export const powerups = {
 };
 
 export const bookSlots = {
-  bookId: 'book-id',
-  author: 'author',
-  image: 'image',
-  category: 'category',
-  tags: 'tags',
+  bookId: 'readwise-book-id',
+  author: 'readwise-author',
+  image: 'readwise-image',
+  category: 'readwise-category',
+  tags: 'readwise-tags',
 };
 
 export const highlightSlots = {
-  highlightId: 'highlight-id',
+  highlightId: 'readwise-highlight-id',
+  tags: 'readwise-tags',
 };
 
 export const storage = { lastSync: 'last-sync' };

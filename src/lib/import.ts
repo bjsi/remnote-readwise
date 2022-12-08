@@ -1,4 +1,4 @@
-import { Rem, RNPlugin } from '@remnote/plugin-sdk';
+import { Rem, RichTextElementInterface, RichTextInterface, RNPlugin } from '@remnote/plugin-sdk';
 import { bookSlots, highlightSlots, powerups } from '../widgets/consts';
 import { Highlight, ReadwiseBook } from './types';
 import { addLinkAsSource } from './utils';
@@ -44,7 +44,9 @@ const findOrCreateBookRem = async (
     );
     await bookRem.setPowerupProperty(powerups.book, bookSlots.category, [book.category]);
     if (book.book_tags && book.book_tags.length > 0) {
-      await bookRem.setPowerupProperty(powerups.book, bookSlots.tags, book.book_tags);
+      await bookRem.setPowerupProperty(powerups.book, bookSlots.tags, [
+        book.book_tags.map((x) => x.name).join(', '),
+      ]);
     }
     await bookRem.setParent(bookParentRem._id);
     await highlightsRem.setText(['Highlights']);
@@ -52,6 +54,41 @@ const findOrCreateBookRem = async (
     return bookRem;
   }
 };
+
+async function convertToHighlightedStringArray(plugin: RNPlugin, highlight: Highlight) {
+  // Create a regex that matches substrings wrapped in two _ characters
+  const highlightedStringRegex = /__(.*?)__/g;
+
+  // Create an array to store the highlighted strings and non-highlighted strings
+  let highlightedStringArray: RichTextInterface = [];
+
+  // Loop through the input string, searching for highlighted substrings using the regex
+  let match;
+  let str = highlight.text;
+  while ((match = highlightedStringRegex.exec(str)) !== null) {
+    // Add the non-highlighted substring before the highlighted substring to the array
+    const preMatchString = str.slice(0, match.index);
+    if (preMatchString.length > 0) {
+      highlightedStringArray.push(preMatchString);
+    }
+
+    // Add the highlighted substring to the array as an object with the highlighted string as the value of the "highlightedString" property
+    const matchString = match[1];
+    if (matchString.length > 0) {
+      highlightedStringArray = highlightedStringArray.concat(
+        await plugin.richText.text(matchString, ['Yellow']).value()
+      );
+    }
+
+    // Remove the processed substrings from the input string
+    str = str.slice(match.index + match[0].length);
+  }
+
+  // Add the remaining non-highlighted substring to the array
+  highlightedStringArray.push(str);
+
+  return highlightedStringArray;
+}
 
 const findOrCreateHighlight = async (
   plugin: RNPlugin,
@@ -63,11 +100,16 @@ const findOrCreateHighlight = async (
   if (!highlightRem) {
     highlightRem = (await plugin.rem.createRem())!;
   }
-  await highlightRem.setText([highlight.text]);
+  await highlightRem.setText(await convertToHighlightedStringArray(plugin, highlight));
   await highlightRem.addPowerup(powerups.highlight);
   await highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.highlightId, [
     highlight.id.toString(),
   ]);
+  if (highlight.tags && highlight.tags.length > 0) {
+    await highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.tags, [
+      highlight.tags.map((x) => x.name).join(', '),
+    ]);
+  }
   await addLinkAsSource(plugin, highlightRem, highlight.readwise_url);
   const parent = await plugin.rem.findByName(['Highlights'], bookRem._id);
   await highlightRem.setParent(parent!._id);

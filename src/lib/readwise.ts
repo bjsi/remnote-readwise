@@ -7,7 +7,7 @@ type ExportError = 'auth' | string;
 
 export const fetchFromExportApi = async (
   apiKey: string,
-  updatedAfter?: number
+  updatedAfter?: string
 ): Promise<Either<ExportError, ReadwiseBook[]>> => {
   let fullData: ReadwiseBook[] = [];
   let nextPageCursor: string | null = null;

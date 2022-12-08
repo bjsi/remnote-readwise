@@ -4,7 +4,6 @@ import '../App.css';
 import { bookSlots, highlightSlots, powerups, settings, storage } from './consts';
 import { fetchFromExportApi as getReadwiseExportsSince } from '../lib/readwise';
 import { importBooksAndHighlights } from '../lib/import';
-import { resourceLimits } from 'worker_threads';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await plugin.settings.registerStringSetting({
@@ -57,6 +56,10 @@ async function onActivate(plugin: ReactRNPlugin) {
           name: 'Highlight ID',
           hidden: true,
         },
+        {
+          code: highlightSlots.tags,
+          name: 'Tags',
+        },
       ],
     }
   );
@@ -70,15 +73,17 @@ async function onActivate(plugin: ReactRNPlugin) {
       return;
     }
 
-    const lastSync = await plugin.storage.getSynced<number>(storage.lastSync);
+    const lastSync = await plugin.storage.getSynced<string>(storage.lastSync);
     try {
+      const d = new Date();
+      d.setMinutes(d.getMinutes() - 10);
       const result = await getReadwiseExportsSince(apiKey, lastSync);
       if (result.success) {
         const books = result.data;
         if (books && books.length > 0) {
           await importBooksAndHighlights(plugin, books);
         }
-        // await plugin.storage.setSynced(storage.lastSync, new Date().getTime());
+        // await plugin.storage.setSynced(storage.lastSync, new Date().toISOString());
       } else {
         if (result.error == 'auth') {
           const msg =

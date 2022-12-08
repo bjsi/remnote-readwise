@@ -12,7 +12,7 @@ export interface Highlight {
   end_location?: any;
   url?: string;
   book_id: number;
-  tags: string[];
+  tags: { id: number; name: string }[];
   is_favorite: boolean;
   is_discard: boolean;
   readwise_url: string;
@@ -26,7 +26,7 @@ export interface ReadwiseBook {
   source: string;
   cover_image_url: string;
   unique_url: string;
-  book_tags: any[];
+  book_tags: { id: number; name: string }[];
   category: string;
   readwise_url: string;
   source_url: string;
