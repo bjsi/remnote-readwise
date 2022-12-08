@@ -11,11 +11,11 @@ export const bookSlots = {
   bookId: 'book-id',
   author: 'author',
   image: 'image',
+  category: 'category',
+  tags: 'tags',
 };
 
 export const highlightSlots = {
-  readwiseUrl: 'readwise-url',
-  url: 'url',
   highlightId: 'highlight-id',
 };
 

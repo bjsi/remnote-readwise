@@ -2,15 +2,17 @@ import { declareIndexPlugin, ReactRNPlugin } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
 import { bookSlots, highlightSlots, powerups, settings, storage } from './consts';
-import { fetchFromExportApi as getReadwiseBooks } from '../lib/readwise';
+import { fetchFromExportApi as getReadwiseExportsSince } from '../lib/readwise';
 import { importBooksAndHighlights } from '../lib/import';
+import { resourceLimits } from 'worker_threads';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await plugin.settings.registerStringSetting({
     id: settings.apiKey,
     title: 'Readwise API Key',
     defaultValue: '',
-    description: 'Readwise API key acquired from readwise.io/access_token',
+    description:
+      'Paste your Readwise API key here. Follow the instructions here if you do not have a key: https://www.readwise.io/access_token',
   });
 
   await plugin.app.registerPowerup(
@@ -22,8 +24,7 @@ async function onActivate(plugin: ReactRNPlugin) {
         {
           code: bookSlots.bookId,
           name: 'Book ID',
-          // TODO: make this true
-          hidden: false,
+          hidden: true,
         },
         {
           code: bookSlots.author,
@@ -33,21 +34,28 @@ async function onActivate(plugin: ReactRNPlugin) {
           code: bookSlots.image,
           name: 'Image',
         },
+        {
+          code: bookSlots.category,
+          name: 'Category',
+        },
+        {
+          code: bookSlots.tags,
+          name: 'Tags',
+        },
       ],
     }
   );
 
   await plugin.app.registerPowerup(
     'Readwise Highlight',
-    powerups.book,
+    powerups.highlight,
     'Represents a highlight from Readwise',
     {
       slots: [
         {
           code: highlightSlots.highlightId,
           name: 'Highlight ID',
-          // TODO: make this true
-          hidden: false,
+          hidden: true,
         },
       ],
     }
@@ -56,7 +64,7 @@ async function onActivate(plugin: ReactRNPlugin) {
   const syncHighlights = async () => {
     const apiKey = await plugin.settings.getSetting<string>(settings.apiKey);
     if (!apiKey) {
-      const msg = 'No Readwise API key set. Please set one in the settings.';
+      const msg = 'No Readwise API key set. Please follow the instructions in the plugin settings.';
       console.log(msg);
       plugin.app.toast(msg);
       return;
@@ -64,28 +72,50 @@ async function onActivate(plugin: ReactRNPlugin) {
 
     const lastSync = await plugin.storage.getSynced<number>(storage.lastSync);
     try {
-      const books = await getReadwiseBooks(apiKey, lastSync);
-      if (books && books.length > 0) {
-        await importBooksAndHighlights(plugin, books);
+      const result = await getReadwiseExportsSince(apiKey, lastSync);
+      if (result.success) {
+        const books = result.data;
+        if (books && books.length > 0) {
+          await importBooksAndHighlights(plugin, books);
+        }
+        // await plugin.storage.setSynced(storage.lastSync, new Date().getTime());
+      } else {
+        if (result.error == 'auth') {
+          const msg =
+            'Readwise API key is invalid. Please follow the instructions in the plugin settings.';
+          console.log(msg);
+          plugin.app.toast(msg);
+          return;
+        } else {
+          console.log(result.error);
+          plugin.app.toast('Failed to sync highlights: ' + result.error);
+          return;
+        }
       }
-      await plugin.storage.setSynced(storage.lastSync, new Date().getTime());
     } catch (e) {
       console.log(e);
-      plugin.app.toast('Failed to sync highlights.');
+      plugin.app.toast('Failed to sync highlights. Please check your API key is valid.');
     }
   };
 
-  let timeout: NodeJS.Timeout | undefined;
-
-  plugin.track(async (rp) => {
-    const apiKey = await rp.settings.getSetting<string>(settings.apiKey);
-    if (apiKey) {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      timeout = setTimeout(syncHighlights, 1000 * 10);
-    }
+  plugin.app.registerCommand({
+    id: 'syncHighlights',
+    name: 'Sync Readwise Highlights',
+    keyboardShortcut: 'opt+shift+g',
+    action: () => syncHighlights(),
   });
+
+  // let timeout: NodeJS.Timeout | undefined;
+
+  // plugin.track(async (rp) => {
+  //   const apiKey = await rp.settings.getSetting<string>(settings.apiKey);
+  //   if (apiKey) {
+  //     if (timeout) {
+  //       clearTimeout(timeout);
+  //     }
+  //     timeout = setTimeout(syncHighlights, 1000 * 10);
+  //   }
+  // });
 }
 
 async function onDeactivate(_: ReactRNPlugin) {}
