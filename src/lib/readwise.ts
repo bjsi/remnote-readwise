@@ -34,12 +34,14 @@ export const fetchFromExportApi = async (
       // check Retry-After header and retry
       else if (response.status === 429) {
         await new Promise((resolve) =>
-          setTimeout(
-            resolve,
-            Number.parseInt(response.headers.get('Retry-After') || (1000 * 60 * 5).toString())
-          )
+          setTimeout(resolve, Number.parseInt(response.headers.get('Retry-After')!))
         );
-        return await fetchFromExportApi(apiKey, updatedAfter);
+        const res = await fetchFromExportApi(apiKey, updatedAfter);
+        if (res.success) {
+          return { success: true, data: fullData.concat(res.data) };
+        } else {
+          return res;
+        }
       } else {
         return { success: false, error: response.statusText };
       }

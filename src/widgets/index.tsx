@@ -77,8 +77,6 @@ async function onActivate(plugin: ReactRNPlugin) {
 
     const lastSync = await plugin.storage.getSynced<string>(storage.lastSync);
     try {
-      const d = new Date();
-      d.setMinutes(d.getMinutes() - 10);
       const result = await getReadwiseExportsSince(apiKey, lastSync);
       if (result.success) {
         const books = result.data;
