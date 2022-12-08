@@ -3,7 +3,7 @@ import '../style.css';
 import '../App.css';
 import { bookSlots, highlightSlots, powerups, settings, storage } from './consts';
 import { fetchFromExportApi as getReadwiseExportsSince } from '../lib/readwise';
-import { importBooksAndHighlights } from '../lib/import';
+import { convertToRichTextArray, importBooksAndHighlights } from '../lib/import';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await plugin.settings.registerStringSetting({
@@ -107,7 +107,9 @@ async function onActivate(plugin: ReactRNPlugin) {
     id: 'syncHighlights',
     name: 'Sync Readwise Highlights',
     keyboardShortcut: 'opt+shift+g',
-    action: () => syncHighlights(),
+    action: async () => {
+      await syncHighlights();
+    },
   });
 
   // let timeout: NodeJS.Timeout | undefined;

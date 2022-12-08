@@ -55,7 +55,8 @@ const findOrCreateBookRem = async (
   }
 };
 
-async function convertToHighlightedStringArray(plugin: RNPlugin, highlight: Highlight) {
+// TODO: doesn't parse bold/italic properly
+export async function convertToRichTextArray(plugin: RNPlugin, text: string) {
   // Create a regex that matches substrings wrapped in two _ characters
   const highlightedStringRegex = /__(.*?)__/g;
 
@@ -64,7 +65,7 @@ async function convertToHighlightedStringArray(plugin: RNPlugin, highlight: High
 
   // Loop through the input string, searching for highlighted substrings using the regex
   let match;
-  let str = highlight.text;
+  let str = text;
   while ((match = highlightedStringRegex.exec(str)) !== null) {
     // Add the non-highlighted substring before the highlighted substring to the array
     const preMatchString = str.slice(0, match.index);
@@ -100,7 +101,7 @@ const findOrCreateHighlight = async (
   if (!highlightRem) {
     highlightRem = (await plugin.rem.createRem())!;
   }
-  await highlightRem.setText(await convertToHighlightedStringArray(plugin, highlight));
+  await highlightRem.setText(await convertToRichTextArray(plugin, highlight.text));
   await highlightRem.addPowerup(powerups.highlight);
   await highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.highlightId, [
     highlight.id.toString(),
