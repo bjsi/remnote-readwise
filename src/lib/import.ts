@@ -1,4 +1,4 @@
-import { Rem, RichTextElementInterface, RichTextInterface, RNPlugin } from '@remnote/plugin-sdk';
+import { BuiltInPowerupCodes, Rem, RichTextInterface, RNPlugin } from '@remnote/plugin-sdk';
 import { bookSlots, highlightSlots, powerups } from '../widgets/consts';
 import { Highlight, ReadwiseBook } from './types';
 import { addLinkAsSource } from './utils';
@@ -10,6 +10,8 @@ const findOrCreateBookParentRem = async (plugin: RNPlugin) => {
   } else {
     const r = await plugin.rem.createRem();
     await r?.setText(['Readwise Books']);
+    await r?.setIsDocument(true)
+    await r?.setPowerupProperty(BuiltInPowerupCodes.Document, "Status", ["Pinned"])
     return r;
   }
 };
