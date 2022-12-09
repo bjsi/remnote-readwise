@@ -66,7 +66,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 
   let timeout: NodeJS.Timeout | undefined;
 
-  const syncHighlights = async () => {
+  const syncHighlights = async (ignoreLastSync?: boolean) => {
     const apiKey = await plugin.settings.getSetting<string>(settings.apiKey);
     if (!apiKey) {
       const msg = 'No Readwise API key set. Please follow the instructions in the plugin settings.';
@@ -74,8 +74,9 @@ async function onActivate(plugin: ReactRNPlugin) {
       plugin.app.toast(msg);
       return;
     }
-
-    const lastSync = await plugin.storage.getSynced<string>(storage.lastSync);
+    const lastSync = ignoreLastSync
+      ? undefined
+      : await plugin.storage.getSynced<string>(storage.lastSync);
     try {
       const result = await getReadwiseExportsSince(apiKey, lastSync);
       if (result.success) {
@@ -107,10 +108,20 @@ async function onActivate(plugin: ReactRNPlugin) {
   };
 
   plugin.app.registerCommand({
-    id: 'syncHighlights',
-    name: 'Sync Readwise Highlights',
+    id: 'syncLatestHighlights',
+    name: 'Readwise Sync Latest',
+    description: "Sync any unsynced Readwise books and highlights since the last sync time. This command is run automatically for you in the background every 30 minutes.",
     action: async () => {
       await syncHighlights();
+    },
+  })
+
+  plugin.app.registerCommand({
+    id: 'syncAllHighlights',
+    name: 'Readwise Sync All',
+    description: "Sync all Readwise books and highlights into RemNote. You should only need to run this command the first time you use the plugin.",
+    action: async () => {
+      await syncHighlights(true);
     },
   });
 

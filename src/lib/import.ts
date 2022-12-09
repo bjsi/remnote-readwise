@@ -20,39 +20,40 @@ const findOrCreateBookRem = async (
   bookParentRem: Rem,
   allBooksByBookId: Record<string, Rem>
 ) => {
-  let bookRem = allBooksByBookId[book.user_book_id];
-  if (bookRem) {
-    return bookRem;
-  } else {
-    const bookRem = await plugin.rem.createRem();
-    const highlightsRem = await plugin.rem.createRem();
-    if (!bookRem || !highlightsRem) {
-      return;
-    }
-    await bookRem.setText([book.title]);
-    await bookRem.addPowerup(powerups.book);
-
-    await bookRem.setPowerupProperty(powerups.book, bookSlots.bookId, [
-      book.user_book_id.toString(),
-    ]);
-    await bookRem.setPowerupProperty(powerups.book, bookSlots.author, [book.author]);
-    await addLinkAsSource(plugin, bookRem, book.readwise_url);
-    await bookRem.setPowerupProperty(
-      powerups.book,
-      bookSlots.image,
-      await plugin.richText.image(book.cover_image_url).value()
-    );
-    await bookRem.setPowerupProperty(powerups.book, bookSlots.category, [book.category]);
-    if (book.book_tags && book.book_tags.length > 0) {
-      await bookRem.setPowerupProperty(powerups.book, bookSlots.tags, [
-        book.book_tags.map((x) => x.name).join(', '),
-      ]);
-    }
-    await bookRem.setParent(bookParentRem._id);
-    await highlightsRem.setText(['Highlights']);
-    await highlightsRem.setParent(bookRem._id);
-    return bookRem;
+  let bookRem: Rem | undefined = allBooksByBookId[book.user_book_id];
+  if (!bookRem) {
+    bookRem = await plugin.rem.createRem();
   }
+  let highlightsRem = await plugin.rem.findByName(["Highlights"], bookRem!._id)
+  if (!highlightsRem) {
+    highlightsRem = await plugin.rem.createRem();
+  }
+  if (!bookRem || !highlightsRem) {
+    return;
+  }
+  await bookRem.setText([book.title]);
+  await bookRem.addPowerup(powerups.book);
+
+  await bookRem.setPowerupProperty(powerups.book, bookSlots.bookId, [
+    book.user_book_id.toString(),
+  ]);
+  await bookRem.setPowerupProperty(powerups.book, bookSlots.author, [book.author]);
+  await addLinkAsSource(plugin, bookRem, book.readwise_url);
+  await bookRem.setPowerupProperty(
+    powerups.book,
+    bookSlots.image,
+    await plugin.richText.image(book.cover_image_url).value()
+  );
+  await bookRem.setPowerupProperty(powerups.book, bookSlots.category, [book.category]);
+  if (book.book_tags && book.book_tags.length > 0) {
+    await bookRem.setPowerupProperty(powerups.book, bookSlots.tags, [
+      book.book_tags.map((x) => x.name).join(', '),
+    ]);
+  }
+  await bookRem.setParent(bookParentRem._id);
+  await highlightsRem.setText(['Highlights']);
+  await highlightsRem.setParent(bookRem._id);
+  return bookRem;
 };
 
 // TODO: doesn't parse bold/italic properly
@@ -150,18 +151,20 @@ export const importBooksAndHighlights = async (plugin: RNPlugin, books: Readwise
     return;
   }
 
-  const allBooksByd = await findAllBooks(plugin);
+  const allBooksById = await findAllBooks(plugin);
   const allHighlightsById = await findAllHighlights(plugin);
 
   await Promise.all(
     books.map(async (book) => {
-      const bookRem = await findOrCreateBookRem(plugin, book, bookParentRem, allBooksByd);
+      const bookRem = await findOrCreateBookRem(plugin, book, bookParentRem, allBooksById);
       if (!bookRem) {
         return;
       } else {
-        book.highlights.map(async (highlight) => {
-          await findOrCreateHighlight(plugin, highlight, bookRem, allHighlightsById);
-        });
+        await Promise.all(
+          book.highlights.map(async (highlight) => {
+            await findOrCreateHighlight(plugin, highlight, bookRem, allHighlightsById);
+          })
+        );
       }
     })
   );

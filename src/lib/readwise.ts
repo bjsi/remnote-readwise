@@ -33,6 +33,7 @@ export const fetchFromExportApi = async (
       }
       // check Retry-After header and retry
       else if (response.status === 429) {
+        console.log("Hit rate limit, retrying...")
         await new Promise((resolve) =>
           setTimeout(resolve, Number.parseInt(response.headers.get('Retry-After')!))
         );
