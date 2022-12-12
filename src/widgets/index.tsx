@@ -110,16 +110,18 @@ async function onActivate(plugin: ReactRNPlugin) {
   plugin.app.registerCommand({
     id: 'syncLatestHighlights',
     name: 'Readwise Sync Latest',
-    description: "Sync any unsynced Readwise books and highlights since the last sync time. This command is run automatically for you in the background every 30 minutes.",
+    description:
+      'Sync any unsynced Readwise books and highlights since the last sync time. This command is run automatically for you in the background every 30 minutes.',
     action: async () => {
       await syncHighlights();
     },
-  })
+  });
 
   plugin.app.registerCommand({
     id: 'syncAllHighlights',
     name: 'Readwise Sync All',
-    description: "Sync all Readwise books and highlights into RemNote. You should only need to run this command the first time you use the plugin.",
+    description:
+      'Sync all Readwise books and highlights into RemNote. You should only need to run this command the first time you use the plugin.',
     action: async () => {
       await syncHighlights(true);
     },
@@ -128,6 +130,9 @@ async function onActivate(plugin: ReactRNPlugin) {
   const lastSync = await plugin.storage.getSynced<string>(storage.lastSync);
   if (!lastSync || new Date(lastSync).getTime() < new Date().getTime() - 1000 * 60 * 30) {
     syncHighlights();
+  } else {
+    clearTimeout(timeout);
+    setTimeout(syncHighlights, 1000 * 60 * 30 - (Date.now() - new Date(lastSync).getTime()));
   }
 }
 
