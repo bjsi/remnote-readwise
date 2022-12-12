@@ -10,8 +10,8 @@ const findOrCreateBookParentRem = async (plugin: RNPlugin) => {
   } else {
     const r = await plugin.rem.createRem();
     await r?.setText(['Readwise Books']);
-    await r?.setIsDocument(true)
-    await r?.setPowerupProperty(BuiltInPowerupCodes.Document, "Status", ["Pinned"])
+    await r?.setIsDocument(true);
+    await r?.setPowerupProperty(BuiltInPowerupCodes.Document, 'Status', ['Pinned']);
     return r;
   }
 };
@@ -26,7 +26,7 @@ const findOrCreateBookRem = async (
   if (!bookRem) {
     bookRem = await plugin.rem.createRem();
   }
-  let highlightsRem = await plugin.rem.findByName(["Highlights"], bookRem!._id)
+  let highlightsRem = await plugin.rem.findByName(['Highlights'], bookRem!._id);
   if (!highlightsRem) {
     highlightsRem = await plugin.rem.createRem();
   }
@@ -36,16 +36,19 @@ const findOrCreateBookRem = async (
   await bookRem.setText([book.title]);
   await bookRem.addPowerup(powerups.book);
 
-  await bookRem.setPowerupProperty(powerups.book, bookSlots.bookId, [
-    book.user_book_id.toString(),
-  ]);
-  await bookRem.setPowerupProperty(powerups.book, bookSlots.author, [book.author]);
+  await bookRem.setPowerupProperty(powerups.book, bookSlots.bookId, [book.user_book_id.toString()]);
+  if (book.author) {
+    await bookRem.setPowerupProperty(powerups.book, bookSlots.author, [book.author]);
+  }
+
   await addLinkAsSource(plugin, bookRem, book.readwise_url);
-  await bookRem.setPowerupProperty(
-    powerups.book,
-    bookSlots.image,
-    await plugin.richText.image(book.cover_image_url).value()
-  );
+  if (book.cover_image_url) {
+    await bookRem.setPowerupProperty(
+      powerups.book,
+      bookSlots.image,
+      await plugin.richText.image(book.cover_image_url).value()
+    );
+  }
   await bookRem.setPowerupProperty(powerups.book, bookSlots.category, [book.category]);
   if (book.book_tags && book.book_tags.length > 0) {
     await bookRem.setPowerupProperty(powerups.book, bookSlots.tags, [

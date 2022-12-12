@@ -66,7 +66,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 
   let timeout: NodeJS.Timeout | undefined;
 
-  const syncHighlights = async (ignoreLastSync?: boolean) => {
+  const syncHighlights = async (opts: { ignoreLastSync?: boolean; notify?: boolean }) => {
     const apiKey = await plugin.settings.getSetting<string>(settings.apiKey);
     if (!apiKey) {
       const msg = 'No Readwise API key set. Please follow the instructions in the plugin settings.';
@@ -74,7 +74,7 @@ async function onActivate(plugin: ReactRNPlugin) {
       plugin.app.toast(msg);
       return;
     }
-    const lastSync = ignoreLastSync
+    const lastSync = opts.ignoreLastSync
       ? undefined
       : await plugin.storage.getSynced<string>(storage.lastSync);
     try {
@@ -82,7 +82,23 @@ async function onActivate(plugin: ReactRNPlugin) {
       if (result.success) {
         const books = result.data;
         if (books && books.length > 0) {
+          const msg1 = 'Importing books and highlights...';
+          console.log(msg1);
+          if (opts.notify) {
+            plugin.app.toast(msg1);
+          }
           await importBooksAndHighlights(plugin, books);
+          const msg = 'Finished importing books and highlights.';
+          console.log(msg);
+          if (opts.notify) {
+            plugin.app.toast(msg);
+          }
+        } else {
+          const msg = 'No new books or highlights to import.';
+          console.log(msg);
+          if (opts.notify) {
+            plugin.app.toast(msg);
+          }
         }
         await plugin.storage.setSynced(storage.lastSync, new Date().toISOString());
       } else {
@@ -113,7 +129,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     description:
       'Sync any unsynced Readwise books and highlights since the last sync time. This command is run automatically for you in the background every 30 minutes.',
     action: async () => {
-      await syncHighlights();
+      await syncHighlights({ notify: true });
     },
   });
 
@@ -123,13 +139,13 @@ async function onActivate(plugin: ReactRNPlugin) {
     description:
       'Sync all Readwise books and highlights into RemNote. You should only need to run this command the first time you use the plugin.',
     action: async () => {
-      await syncHighlights(true);
+      await syncHighlights({ ignoreLastSync: true, notify: true });
     },
   });
 
   const lastSync = await plugin.storage.getSynced<string>(storage.lastSync);
   if (!lastSync || new Date(lastSync).getTime() < new Date().getTime() - 1000 * 60 * 30) {
-    syncHighlights();
+    syncHighlights({});
   } else {
     clearTimeout(timeout);
     setTimeout(syncHighlights, 1000 * 60 * 30 - (Date.now() - new Date(lastSync).getTime()));
