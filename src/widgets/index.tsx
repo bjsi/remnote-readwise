@@ -148,7 +148,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     syncHighlights({});
   } else {
     clearTimeout(timeout);
-    setTimeout(syncHighlights, 1000 * 60 * 30 - (Date.now() - new Date(lastSync).getTime()));
+    setTimeout(() => syncHighlights({}), 1000 * 60 * 30 - (Date.now() - new Date(lastSync).getTime()));
   }
 }
 

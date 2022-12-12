@@ -159,18 +159,15 @@ export const importBooksAndHighlights = async (plugin: RNPlugin, books: Readwise
   const allBooksById = await findAllBooks(plugin);
   const allHighlightsById = await findAllHighlights(plugin);
 
-  await Promise.all(
-    books.map(async (book) => {
-      const bookRem = await findOrCreateBookRem(plugin, book, bookParentRem, allBooksById);
-      if (!bookRem) {
-        return;
-      } else {
-        await Promise.all(
-          book.highlights.map(async (highlight) => {
-            await findOrCreateHighlight(plugin, highlight, bookRem, allHighlightsById);
-          })
-        );
+  for (let i = 0; i < books.length; i++) {
+    const book = books[i]
+    const bookRem = await findOrCreateBookRem(plugin, book, bookParentRem, allBooksById);
+    if (!bookRem) {
+      return;
+    } else {
+      for (const highlight of book.highlights) {
+        await findOrCreateHighlight(plugin, highlight, bookRem, allHighlightsById);
       }
-    })
-  );
+    }
+  }
 };
