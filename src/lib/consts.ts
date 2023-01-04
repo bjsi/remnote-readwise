@@ -23,4 +23,5 @@ export const highlightSlots = {
 export const storage = {
   lastSync: 'last-sync',
   syncProgress: 'sync-progress',
+  syncError: 'sync-error',
 };

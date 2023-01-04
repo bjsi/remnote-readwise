@@ -159,7 +159,8 @@ const findAllHighlights = async (plugin: RNPlugin) => {
 export const importBooksAndHighlights = async (
   plugin: RNPlugin,
   books: ReadwiseBook[],
-  updateSyncProgressModal: (percentageDone: number) => Promise<void>
+  updateSyncProgressModal: (percentageDone: number) => Promise<void>,
+  updateSyncError: (error: string) => Promise<void>
 ) => {
   const bookParentRem = await findOrCreateBookParentRem(plugin);
   if (!bookParentRem) {
@@ -179,7 +180,8 @@ export const importBooksAndHighlights = async (
     const bookRemId = await findOrCreateBookRem(plugin, book, bookParentRem, allBooksById);
     const bookRem = await plugin.rem.findOne(bookRemId);
     if (!bookRem) {
-      return;
+      await updateSyncError(`Could not find or create rem for book ${book.title}`);
+      continue;
     } else {
       for (const highlight of book.highlights) {
         await findOrCreateHighlight(plugin, highlight, bookRem, allHighlightsById);

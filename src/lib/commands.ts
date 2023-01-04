@@ -22,4 +22,12 @@ export async function registerCommands(plugin: RNPlugin) {
       await syncer.syncAll();
     },
   });
+
+  plugin.app.registerCommand({
+    id: 'debugSync',
+    name: 'Readwise Debug Sync',
+    action: async () => {
+      syncer.debug();
+    },
+  });
 }

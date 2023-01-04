@@ -42,7 +42,11 @@ class Syncer {
     await this.plugin.widget.openPopup('importing');
   };
 
-  private updateSyncProgressModal = async (percentageDone: number) => {
+  private updateSyncError = async (error: string) => {
+    await this.plugin.storage.setSynced(storage.syncError, error);
+  };
+
+  private updateSyncProgress = async (percentageDone: number) => {
     await this.plugin.storage.setSynced(storage.syncProgress, percentageDone);
   };
 
@@ -68,18 +72,25 @@ class Syncer {
     return new Date(lastSync).getTime() < new Date().getTime() - SYNC_INTERVAL;
   }
 
+  public async debug() {
+    const lastSync = await this.getLastSync();
+    this.log(`Last sync: ${lastSync}`);
+    const timeUntilNextSync = await this.timeUntilNextSync();
+    this.log(`Time until next sync: ${timeUntilNextSync / 1000} seconds`);
+  }
+
   /**
    * Sync ALL books and highlights.
    * Opens a modal to show progress.
    * Should only be run once, when the user first installs the plugin.
    */
   public async syncAll() {
-    return this.syncHighlights({ ignoreLastSync: true, notify: true });
+    return this.syncHighlights({ ignoreLastSync: true, notify: true, showModal: true });
   }
 
   /**
    * Sync any books and highlights since the last sync time.
-   * Run periodically in the background.
+   * Runs periodically in the background.
    * Shouldn't run if the user hasn't done an initial syncAll.
    * If runImmediately is true, ignore the current sync timeout and run immediately.
    */
@@ -92,11 +103,15 @@ class Syncer {
       await this.syncHighlights({});
     } else {
       clearTimeout(this.timeout);
-      setTimeout(() => this.syncHighlights({}), await this.timeUntilNextSync());
+      this.timeout = setTimeout(() => this.syncHighlights({}), await this.timeUntilNextSync());
     }
   }
 
-  private syncHighlights = async (opts: { ignoreLastSync?: boolean; notify?: boolean }) => {
+  private syncHighlights = async (opts: {
+    ignoreLastSync?: boolean;
+    notify?: boolean;
+    showModal?: boolean;
+  }) => {
     const apiKey = await this.getAPIKey();
     if (!apiKey) {
       this.log(
@@ -112,8 +127,14 @@ class Syncer {
         const books = result.data;
         if (books && books.length > 0) {
           this.log('Importing books and highlights...', !!opts.notify);
-          await this.updateSyncProgressModal(0);
-          await importBooksAndHighlights(this.plugin, books, this.updateSyncProgressModal);
+          await this.updateSyncProgress(0);
+          await this.openSyncProgressModal();
+          await importBooksAndHighlights(
+            this.plugin,
+            books,
+            this.updateSyncProgress.bind(this),
+            this.updateSyncError.bind(this)
+          );
           this.log('Finished importing books and highlights.', !!opts.notify);
         } else {
           this.log('No new books or highlights to import.', !!opts.notify);
@@ -133,7 +154,7 @@ class Syncer {
       this.log('Failed to sync Readwise highlights.', true);
     } finally {
       clearTimeout(this.timeout);
-      setTimeout(() => this.syncLatest(), SYNC_INTERVAL);
+      this.timeout = setTimeout(() => this.syncLatest(), SYNC_INTERVAL);
     }
   };
 }
