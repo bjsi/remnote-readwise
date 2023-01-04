@@ -44,9 +44,9 @@ const findOrCreateBookRem = async (
     if (book.author) {
       await bookRem.setPowerupProperty(powerups.book, bookSlots.author, [book.author]);
     }
-    if (book.readwise_url) {
-      await addLinkAsSource(plugin, bookRem, book.readwise_url);
-    }
+    // if (book.readwise_url) {
+    //   await addLinkAsSource(plugin, bookRem, book.readwise_url);
+    // }
     if (book.cover_image_url) {
       await bookRem.setPowerupProperty(
         powerups.book,
@@ -126,9 +126,9 @@ const findOrCreateHighlight = async (
       highlight.tags.map((x) => x.name).join(', '),
     ]);
   }
-  if (highlight.readwise_url) {
-    await addLinkAsSource(plugin, highlightRem, highlight.readwise_url);
-  }
+  // if (highlight.readwise_url) {
+  //   await addLinkAsSource(plugin, highlightRem, highlight.readwise_url);
+  // }
 };
 
 const findAllBooks = async (plugin: RNPlugin) => {
@@ -180,14 +180,15 @@ export const importBooksAndHighlights = async (
     const bookRemId = await findOrCreateBookRem(plugin, book, bookParentRem, allBooksById);
     const bookRem = await plugin.rem.findOne(bookRemId);
     if (!bookRem) {
-      await updateSyncError(`Could not find or create rem for book ${book.title}`);
       continue;
     } else {
-      for (const highlight of book.highlights) {
-        await findOrCreateHighlight(plugin, highlight, bookRem, allHighlightsById);
-        count++;
-        await updateSyncProgressModal((count / total) * 100);
-      }
+      await Promise.all(
+        book.highlights.map(async (highlight) => {
+          await findOrCreateHighlight(plugin, highlight, bookRem, allHighlightsById);
+          count++;
+          await updateSyncProgressModal((count / total) * 100);
+        })
+      );
     }
   }
 };

@@ -17,6 +17,7 @@ const SYNC_INTERVAL = 30 * 60 * 1000; // 30 minutes
 class Syncer {
   plugin: RNPlugin;
   timeout: NodeJS.Timeout | undefined;
+  isSyncing = false;
 
   constructor(plugin: RNPlugin) {
     this.plugin = plugin;
@@ -39,7 +40,7 @@ class Syncer {
   };
 
   private openSyncProgressModal = async () => {
-    await this.plugin.widget.openPopup('importing');
+    await this.plugin.widget.openPopup('importing', {}, false);
   };
 
   private updateSyncError = async (error: string) => {
@@ -119,16 +120,22 @@ class Syncer {
         true
       );
       return;
+    } else if (this.isSyncing) {
+      this.log('Sync already in progress.', true);
+      return;
     }
     const lastSync = opts.ignoreLastSync ? undefined : await this.getLastSync();
     try {
       const result = await getReadwiseExportsSince(apiKey, lastSync?.toISOString());
       if (result.success) {
         const books = result.data;
+        const total = books.reduce((acc, b) => acc + b.highlights.length, 0);
+        this.log(`Found ${books.length} books with ${total} highlights.`);
         if (books && books.length > 0) {
           this.log('Importing books and highlights...', !!opts.notify);
           await this.updateSyncProgress(0);
           await this.openSyncProgressModal();
+          this.isSyncing = true;
           await importBooksAndHighlights(
             this.plugin,
             books,
@@ -155,6 +162,7 @@ class Syncer {
     } finally {
       clearTimeout(this.timeout);
       this.timeout = setTimeout(() => this.syncLatest(), SYNC_INTERVAL);
+      this.isSyncing = false;
     }
   };
 }
