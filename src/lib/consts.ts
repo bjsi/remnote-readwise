@@ -20,4 +20,7 @@ export const highlightSlots = {
   tags: 'readwise-tags',
 };
 
-export const storage = { lastSync: 'last-sync' };
+export const storage = {
+  lastSync: 'last-sync',
+  syncProgress: 'sync-progress',
+};

@@ -1,11 +1,11 @@
-import { ReadwiseBook, ReadwiseHighlightExport as ReadwiseExport } from './types';
+import { ReadwiseBook } from './types/readwise';
 
 type Either<E, A> = Failure<E> | Success<A>;
 type Failure<E> = { success: false; error: E };
 type Success<A> = { success: true; data: A };
 type ExportError = 'auth' | string;
 
-export const fetchFromExportApi = async (
+export const getReadwiseExportsSince = async (
   apiKey: string,
   updatedAfter?: string
 ): Promise<Either<ExportError, ReadwiseBook[]>> => {
@@ -33,11 +33,11 @@ export const fetchFromExportApi = async (
       }
       // check Retry-After header and retry
       else if (response.status === 429) {
-        console.log("Hit rate limit, retrying...")
+        console.log('Hit rate limit, retrying...');
         await new Promise((resolve) =>
           setTimeout(resolve, Number.parseInt(response.headers.get('Retry-After')!))
         );
-        const res = await fetchFromExportApi(apiKey, updatedAfter);
+        const res = await getReadwiseExportsSince(apiKey, updatedAfter);
         if (res.success) {
           return { success: true, data: fullData.concat(res.data) };
         } else {
