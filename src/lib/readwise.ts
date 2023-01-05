@@ -1,8 +1,6 @@
+import { Either } from './types/either';
 import { ReadwiseBook } from './types/readwise';
 
-type Either<E, A> = Failure<E> | Success<A>;
-type Failure<E> = { success: false; error: E };
-type Success<A> = { success: true; data: A };
 type ExportError = 'auth' | string;
 
 export const getReadwiseExportsSince = async (

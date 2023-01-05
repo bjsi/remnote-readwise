@@ -1,5 +1,6 @@
 import { BuiltInPowerupCodes, Rem, RichTextInterface, RNPlugin } from '@remnote/plugin-sdk';
 import { bookSlots, highlightSlots, powerups } from './consts';
+import { Either } from './types/either';
 import { Highlight, ReadwiseBook } from './types/readwise';
 import { addLinkAsSource } from './utils';
 
@@ -10,8 +11,8 @@ const findOrCreateBookParentRem = async (plugin: RNPlugin) => {
   } else {
     const r = await plugin.rem.createRem();
     await r?.setText(['Readwise Books']);
-    await r?.setIsDocument(true);
-    await r?.setPowerupProperty(BuiltInPowerupCodes.Document, 'Status', ['Pinned']);
+    r?.setIsDocument(true);
+    r?.setPowerupProperty(BuiltInPowerupCodes.Document, 'Status', ['Pinned']);
     return r;
   }
 };
@@ -35,30 +36,28 @@ const findOrCreateBookRem = async (
       return;
     }
     await highlightsRem.setParent(bookRem._id);
-    await bookRem.setText([book.title]);
+    bookRem.setText([book.title]);
     await bookRem.addPowerup(powerups.book);
 
-    await bookRem.setPowerupProperty(powerups.book, bookSlots.bookId, [
-      book.user_book_id.toString(),
-    ]);
+    bookRem.setPowerupProperty(powerups.book, bookSlots.bookId, [book.user_book_id.toString()]);
     if (book.author) {
-      await bookRem.setPowerupProperty(powerups.book, bookSlots.author, [book.author]);
+      bookRem.setPowerupProperty(powerups.book, bookSlots.author, [book.author]);
     }
-    // if (book.readwise_url) {
-    //   await addLinkAsSource(plugin, bookRem, book.readwise_url);
-    // }
+    if (book.readwise_url) {
+      addLinkAsSource(plugin, bookRem, book.readwise_url);
+    }
     if (book.cover_image_url) {
-      await bookRem.setPowerupProperty(
+      bookRem.setPowerupProperty(
         powerups.book,
         bookSlots.image,
         await plugin.richText.image(book.cover_image_url).value()
       );
     }
     if (book.category) {
-      await bookRem.setPowerupProperty(powerups.book, bookSlots.category, [book.category]);
+      bookRem.setPowerupProperty(powerups.book, bookSlots.category, [book.category]);
     }
     if (book.book_tags && book.book_tags.length > 0) {
-      await bookRem.setPowerupProperty(powerups.book, bookSlots.tags, [
+      bookRem.setPowerupProperty(powerups.book, bookSlots.tags, [
         book.book_tags.map((x) => x.name).join(', '),
       ]);
     }
@@ -109,26 +108,28 @@ const findOrCreateHighlight = async (
   highlight: Highlight,
   bookRem: Rem,
   allHighlightsById: Record<string, Rem>
-) => {
-  let highlightRem = allHighlightsById[highlight.id.toString()];
+): Promise<Either<string, Rem>> => {
+  let highlightRem: Rem | undefined = allHighlightsById[highlight.id.toString()];
+  highlightRem = highlightRem ? highlightRem : await plugin.rem.createRem();
   if (!highlightRem) {
-    highlightRem = (await plugin.rem.createRem())!;
+    return { success: false, error: 'Could not create highlight rem for book: ' + bookRem.text[0] };
   }
   const parent = await plugin.rem.findByName(['Highlights'], bookRem._id);
-  await highlightRem.setParent(parent!._id);
-  await highlightRem.setText(await convertToRichTextArray(plugin, highlight.text));
+  highlightRem.setParent(parent!._id);
+  highlightRem.setText(await convertToRichTextArray(plugin, highlight.text));
   await highlightRem.addPowerup(powerups.highlight);
-  await highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.highlightId, [
+  highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.highlightId, [
     highlight.id.toString(),
   ]);
   if (highlight.tags && highlight.tags.length > 0) {
-    await highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.tags, [
+    highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.tags, [
       highlight.tags.map((x) => x.name).join(', '),
     ]);
   }
-  // if (highlight.readwise_url) {
-  //   await addLinkAsSource(plugin, highlightRem, highlight.readwise_url);
-  // }
+  if (highlight.readwise_url) {
+    addLinkAsSource(plugin, highlightRem, highlight.readwise_url);
+  }
+  return { success: true, data: highlightRem };
 };
 
 const findAllBooks = async (plugin: RNPlugin) => {
@@ -159,15 +160,12 @@ const findAllHighlights = async (plugin: RNPlugin) => {
 export const importBooksAndHighlights = async (
   plugin: RNPlugin,
   books: ReadwiseBook[],
-  updateSyncProgressModal: (percentageDone: number) => Promise<void>,
-  updateSyncError: (error: string) => Promise<void>
-) => {
-  const bookParentRem = await findOrCreateBookParentRem(plugin);
-  if (!bookParentRem) {
-    const msg = 'Could not find or create parent rem for Readwise Books';
-    plugin.app.toast(msg);
-    console.log(msg);
-    return;
+  updateSyncProgressModal: (percentageDone: number) => Promise<void>
+): Promise<Either<string, number>> => {
+  const readwiseBooksRem = await findOrCreateBookParentRem(plugin);
+  if (!readwiseBooksRem) {
+    const err = 'Could not find or create Readwise Books rem';
+    return { success: false, error: err };
   }
 
   const allBooksById = await findAllBooks(plugin);
@@ -177,10 +175,10 @@ export const importBooksAndHighlights = async (
   let count = 0;
   for (let i = 0; i < books.length; i++) {
     const book = books[i];
-    const bookRemId = await findOrCreateBookRem(plugin, book, bookParentRem, allBooksById);
+    const bookRemId = await findOrCreateBookRem(plugin, book, readwiseBooksRem, allBooksById);
     const bookRem = await plugin.rem.findOne(bookRemId);
     if (!bookRem) {
-      continue;
+      return { success: false, error: 'Could not find or create book rem for ' + book.title };
     } else {
       await Promise.all(
         book.highlights.map(async (highlight) => {
@@ -191,4 +189,6 @@ export const importBooksAndHighlights = async (
       );
     }
   }
+
+  return { success: true, data: count };
 };

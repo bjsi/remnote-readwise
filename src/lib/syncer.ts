@@ -126,27 +126,31 @@ class Syncer {
     }
     const lastSync = opts.ignoreLastSync ? undefined : await this.getLastSync();
     try {
+      this.isSyncing = true;
       const result = await getReadwiseExportsSince(apiKey, lastSync?.toISOString());
       if (result.success) {
         const books = result.data;
         const total = books.reduce((acc, b) => acc + b.highlights.length, 0);
         this.log(`Found ${books.length} books with ${total} highlights.`);
         if (books && books.length > 0) {
-          this.log('Importing books and highlights...', !!opts.notify);
+          await this.updateSyncError('');
           await this.updateSyncProgress(0);
           await this.openSyncProgressModal();
-          this.isSyncing = true;
-          await importBooksAndHighlights(
+          const result = await importBooksAndHighlights(
             this.plugin,
             books,
-            this.updateSyncProgress.bind(this),
-            this.updateSyncError.bind(this)
+            this.updateSyncProgress.bind(this)
           );
-          this.log('Finished importing books and highlights.', !!opts.notify);
+          if (result.success) {
+            this.log(`Successfully imported ${result.data} books and highlights.`, !!opts.notify);
+            await this.updateLastSync();
+          } else {
+            this.log('Failed to import books and highlights: ' + result.error, true);
+            await this.updateSyncError(result.error);
+          }
         } else {
           this.log('No new books or highlights to import.', !!opts.notify);
         }
-        await this.updateLastSync();
       } else {
         if (result.error == 'auth') {
           this.log(
@@ -158,7 +162,8 @@ class Syncer {
         }
       }
     } catch (e) {
-      this.log('Failed to sync Readwise highlights.', true);
+      this.log(`Unexpected Error while syncing Readwise highlights: ${e}`, true);
+      await this.updateSyncError('Unexpected Error while syncing Readwise highlights');
     } finally {
       clearTimeout(this.timeout);
       this.timeout = setTimeout(() => this.syncLatest(), SYNC_INTERVAL);

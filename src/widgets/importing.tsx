@@ -23,7 +23,7 @@ function Done() {
         onClick={async () => {
           await close();
           const rem = await plugin.rem.findByName(['Readwise Books'], null);
-          rem?.openRemInContext();
+          rem?.openRemAsPage();
         }}
       >
         Go to Highlights
@@ -51,11 +51,15 @@ function ImportError(props: { error: string }) {
     <>
       <p className="text-lg">🚨 Import failed!</p>
       <p className="text-red-40">Error: {props.error}</p>
+      <p className="">
+        Please report the error through GitHub using the button below, or message Jamesb in the
+        RemNote Discord. Sorry for the inconvenience!
+      </p>
       <img className="rounded-md" src={errorDog} alt="dog" />
       <button
         className="p-2 rounded-md bg-blue-40 text-white"
         onClick={async () => {
-          window.open('https://github.com/bjsi/remnote-readwise', '_blank');
+          window.open('https://github.com/bjsi/remnote-readwise/issues/new', '_blank');
         }}
       >
         🐛 Report Bug
@@ -68,10 +72,12 @@ export function Importing() {
   const [progress] = useSyncedStorageState<number>(storage.syncProgress, 0);
   const done = progress == 100;
   const [error] = useSyncedStorageState<string>(storage.syncError, '');
+  const plugin = usePlugin();
+  const close = async () => await plugin.widget.closePopup();
   return (
     <div className="flex flex-col gap-3 w-[400px] p-3">
-      <div className="flex flex-row items-center justify between">
-        <h1>Syncing All Highlights</h1>
+      <div className="flex flex-row items-center justify-between">
+        <h1>Sync All Highlights</h1>
         {(done || error) && (
           <button className="p-2 flex items-center" onClick={close}>
             ❌
