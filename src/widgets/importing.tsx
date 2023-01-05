@@ -21,9 +21,9 @@ function Done() {
       <button
         className="p-2 rounded-md bg-blue-40 text-white"
         onClick={async () => {
-          await close();
           const rem = await plugin.rem.findByName(['Readwise Books'], null);
           rem?.openRemAsPage();
+          await close();
         }}
       >
         Go to Highlights
