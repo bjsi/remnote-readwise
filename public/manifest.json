@@ -2,14 +2,14 @@
   "author": "Jamesb",
   "name": "Readwise Sync",
   "description": "Sync your Readwise highlights with RemNote",
-  "enableOnMobile": true,
+  "enableOnMobile": false,
   "id": "Jamesb-qb7y5il",
   "manifestVersion": 1,
   "repoUrl": "https://github.com/bjsi/remnote-readwise",
   "version": {
     "major": 0,
     "minor": 0,
-    "patch": 3
+    "patch": 4
   },
   "requestNative": false,
   "requiredScopes": [
