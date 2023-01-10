@@ -32,6 +32,7 @@ class Syncer {
   };
 
   private updateLastSync = async () => {
+    await this.plugin.storage.setSynced(storage.hasDoneFirstRun, true);
     await this.plugin.storage.setSynced(storage.lastSync, new Date().toISOString());
   };
 

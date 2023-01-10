@@ -6,6 +6,7 @@ import { registerPowerups } from '../lib/powerup';
 import { registerSettings } from '../lib/settings';
 import { getSyncer } from '../lib/syncer';
 import { registerWidgets } from '../lib/widgets';
+import {storage} from '../lib/consts';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await registerPowerups(plugin);
@@ -13,7 +14,9 @@ async function onActivate(plugin: ReactRNPlugin) {
   await registerCommands(plugin);
   await registerWidgets(plugin);
   const syncer = getSyncer(plugin);
-  syncer.syncLatest();
+  if (await plugin.storage.getSynced(storage.hasDoneFirstRun)) {
+    syncer.syncLatest();
+  }
 }
 
 async function onDeactivate(_: ReactRNPlugin) {}
