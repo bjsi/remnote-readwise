@@ -152,7 +152,7 @@ const findOrCreateHighlight = async (
   } else {
     return { success: false, error: `Highlight for book ${bookRem.text[0]} has no id` };
   }
-  if (typeof highlight.note === 'string') {
+  if (highlight.note) {
     highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.note, [highlight.note]);
   }
 
