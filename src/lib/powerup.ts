@@ -50,6 +50,10 @@ async function registerHighlightPowerup(plugin: RNPlugin) {
           code: highlightSlots.tags,
           name: 'Tags',
         },
+        {
+          code: highlightSlots.note,
+          name: "Note",
+        }
       ],
     }
   );
