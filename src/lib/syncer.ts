@@ -136,7 +136,9 @@ class Syncer {
         if (books && books.length > 0) {
           await this.updateSyncError('');
           await this.updateSyncProgress(0);
-          await this.openSyncProgressModal();
+          if (opts.showModal) {
+            await this.openSyncProgressModal();
+          }
           const result = await importBooksAndHighlights(
             this.plugin,
             books,
