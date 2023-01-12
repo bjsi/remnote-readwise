@@ -3,7 +3,7 @@ export interface Highlight {
   text: string;
   location: number;
   location_type: string;
-  note?: any;
+  note?: string;
   color: string;
   highlighted_at: Date;
   created_at: Date;
