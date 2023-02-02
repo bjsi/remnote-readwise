@@ -9,7 +9,7 @@
   "version": {
     "major": 0,
     "minor": 0,
-    "patch": 14
+    "patch": 15
   },
   "minimumRemNoteVersion": {
     "major": 1,
@@ -21,6 +21,10 @@
     {
       "type": "All",
       "level": "ReadCreateModify"
+    },
+    {
+      "type": "KnowledgeBaseInfo",
+      "level": "Read"
     }
   ]
 }

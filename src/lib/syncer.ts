@@ -125,6 +125,12 @@ class Syncer {
       this.log('Sync already in progress.', true);
       return;
     }
+    else if (!(await this.plugin.kb.isPrimaryKnowledgeBase())) {
+      clearTimeout(this.timeout);
+      this.timeout = setTimeout(() => this.syncLatest(), SYNC_INTERVAL);
+      console.log("Skipping sync - not primary KB")
+      return
+    }
     const lastSync = opts.ignoreLastSync ? undefined : await this.getLastSync();
     try {
       this.isSyncing = true;
