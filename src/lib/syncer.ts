@@ -124,12 +124,11 @@ class Syncer {
     } else if (this.isSyncing) {
       this.log('Sync already in progress.', true);
       return;
-    }
-    else if (!(await this.plugin.kb.isPrimaryKnowledgeBase())) {
+    } else if (!(await this.plugin.kb.isPrimaryKnowledgeBase())) {
       clearTimeout(this.timeout);
       this.timeout = setTimeout(() => this.syncLatest(), SYNC_INTERVAL);
-      console.log("Skipping sync - not primary KB")
-      return
+      console.log('Skipping sync - not primary KB');
+      return;
     }
     const lastSync = opts.ignoreLastSync ? undefined : await this.getLastSync();
     try {
@@ -148,7 +147,8 @@ class Syncer {
           const result = await importBooksAndHighlights(
             this.plugin,
             books,
-            this.updateSyncProgress.bind(this)
+            this.updateSyncProgress.bind(this),
+            !!lastSync
           );
           if (result.success) {
             this.log(`Successfully imported ${result.data} books and highlights.`, !!opts.notify);

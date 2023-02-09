@@ -5,17 +5,16 @@ import { Either } from './types/either';
 import { Highlight, ReadwiseBook } from './types/readwise';
 import { addLinkAsSource } from './utils';
 
-const findOrCreateBookParentRem = async (plugin: RNPlugin) => {
-  let bookParentRem = await plugin.rem.findByName(['Readwise Books'], null);
-  if (bookParentRem) {
-    return bookParentRem;
-  } else {
-    const r = await plugin.rem.createRem();
-    await r?.setText(['Readwise Books']);
-    r?.setIsDocument(true);
-    r?.setPowerupProperty(BuiltInPowerupCodes.Document, 'Status', ['Pinned']);
-    return r;
-  }
+const findBookParentRem = async (plugin: RNPlugin) => {
+  return await plugin.rem.findByName(['Readwise Books'], null);
+};
+
+const createBookParentRem = async (plugin: RNPlugin) => {
+  const r = await plugin.rem.createRem();
+  await r?.setText(['Readwise Books']);
+  r?.setIsDocument(true);
+  r?.setPowerupProperty(BuiltInPowerupCodes.Document, 'Status', ['Pinned']);
+  return r;
 };
 
 const findOrCreateHighlightsParentRem = async (plugin: RNPlugin, bookRem: Rem) => {
@@ -195,11 +194,17 @@ const findAllHighlights = async (plugin: RNPlugin) => {
 export const importBooksAndHighlights = async (
   plugin: RNPlugin,
   books: ReadwiseBook[],
-  updateSyncProgressModal: (percentageDone: number) => Promise<void>
+  updateSyncProgressModal: (percentageDone: number) => Promise<void>,
+  isUpdateSync: boolean // ie, is not first sync
 ): Promise<Either<string, number>> => {
-  const readwiseBooksRem = await findOrCreateBookParentRem(plugin);
+  let readwiseBooksRem = await findBookParentRem(plugin);
+  if (!readwiseBooksRem && isUpdateSync) {
+    const err = 'Could not find or create Readwise Books Rem. Did you move or rename it?';
+    return { success: false, error: err };
+  }
+  readwiseBooksRem = readwiseBooksRem || (await createBookParentRem(plugin));
   if (!readwiseBooksRem) {
-    const err = 'Could not find or create Readwise Books rem';
+    const err = 'Failed to create Readwise Books Rem.';
     return { success: false, error: err };
   }
 
