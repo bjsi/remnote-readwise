@@ -26,6 +26,15 @@ const findOrCreateHighlightsParentRem = async (plugin: RNPlugin, bookRem: Rem) =
   return highlightsRem;
 };
 
+const findOrCreateTopLevelRem = async (plugin: RNPlugin, str: string) => {
+  let rem = await plugin.rem.findByName([str], null);
+  if (!rem) {
+    rem = await plugin.rem.createRem();
+    await rem?.setText(['Highlights']);
+  }
+  return rem;
+};
+
 const findOrCreateBookRem = async (
   plugin: RNPlugin,
   book: ReadwiseBook,
@@ -76,9 +85,12 @@ const findOrCreateBookRem = async (
       bookRem.setPowerupProperty(powerups.book, bookSlots.category, [book.category]);
     }
     if (book.book_tags && book.book_tags.length > 0) {
-      bookRem.setPowerupProperty(powerups.book, bookSlots.tags, [
-        book.book_tags.map((x) => x.name).join(', '),
-      ]);
+      for (const tag of book.book_tags) {
+        const tagRem = await findOrCreateTopLevelRem(plugin, tag.name);
+        if (tagRem) {
+          bookRem.addTag(tagRem);
+        }
+      }
     }
     await bookRem.setParent(bookParentRem._id);
     return { success: true, data: bookRem._id };
@@ -156,9 +168,16 @@ const findOrCreateHighlight = async (
   }
 
   if (highlight.tags && highlight.tags.length > 0) {
-    highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.tags, [
-      highlight.tags.map((x) => x.name).join(', '),
-    ]);
+    // highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.tags, [
+    //   highlight.tags.map((x) => x.name).join(', '),
+    // ]);
+
+    for (const tag of highlight.tags) {
+      const tagRem = await findOrCreateTopLevelRem(plugin, tag.name);
+      if (tagRem) {
+        highlightRem.addTag(tagRem);
+      }
+    }
   }
   if (highlight.readwise_url) {
     addLinkAsSource(plugin, highlightRem, highlight.readwise_url);
