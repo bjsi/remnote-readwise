@@ -30,7 +30,7 @@ const findOrCreateTopLevelRem = async (plugin: RNPlugin, str: string) => {
   let rem = await plugin.rem.findByName([str], null);
   if (!rem) {
     rem = await plugin.rem.createRem();
-    await rem?.setText(['Highlights']);
+    await rem?.setText([str]);
   }
   return rem;
 };
