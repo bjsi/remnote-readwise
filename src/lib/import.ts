@@ -12,8 +12,8 @@ const findBookParentRem = async (plugin: RNPlugin) => {
 const createBookParentRem = async (plugin: RNPlugin) => {
   const r = await plugin.rem.createRem();
   await r?.setText(['Readwise Books']);
-  r?.setIsDocument(true);
-  r?.setPowerupProperty(BuiltInPowerupCodes.Document, 'Status', ['Pinned']);
+  await r?.setIsDocument(true);
+  await r?.setPowerupProperty(BuiltInPowerupCodes.Document, 'Status', ['Pinned']);
   return r;
 };
 
@@ -61,6 +61,7 @@ const findOrCreateBookRem = async (
       bookRem.setText([book.title]);
     }
     await bookRem.addPowerup(powerups.book);
+    await bookRem.setIsDocument(true);
 
     if (book.user_book_id != null) {
       bookRem.setPowerupProperty(powerups.book, bookSlots.bookId, [book.user_book_id.toString()]);
