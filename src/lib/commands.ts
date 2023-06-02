@@ -3,15 +3,15 @@ import { getSyncer } from './syncer';
 
 export async function registerCommands(plugin: RNPlugin) {
   const syncer = getSyncer(plugin);
-  await plugin.app.registerCommand({
-    id: 'syncLatestHighlights',
-    name: 'Readwise Sync Latest',
-    description:
-      'Sync any unsynced Readwise books and highlights since the last sync time. This command is run automatically for you in the background every 30 minutes.',
-    action: async () => {
-      await syncer.syncLatest(true);
-    },
-  });
+  // await plugin.app.registerCommand({
+  //   id: 'syncLatestHighlights',
+  //   name: 'Readwise Sync Latest',
+  //   description:
+  //     'Sync any unsynced Readwise books and highlights since the last sync time. This command is run automatically for you in the background every 30 minutes.',
+  //   action: async () => {
+  //     await syncer.syncLatest(true);
+  //   },
+  // });
 
   plugin.app.registerCommand({
     id: 'syncAllHighlights',
@@ -23,11 +23,11 @@ export async function registerCommands(plugin: RNPlugin) {
     },
   });
 
-  plugin.app.registerCommand({
-    id: 'debugSync',
-    name: 'Readwise Debug Sync',
-    action: async () => {
-      syncer.debug();
-    },
-  });
+  // plugin.app.registerCommand({
+  //   id: 'debugSync',
+  //   name: 'Readwise Debug Sync',
+  //   action: async () => {
+  //     syncer.debug();
+  //   },
+  // });
 }

@@ -12,7 +12,7 @@ export const getSyncer = (plugin: RNPlugin) => {
   return syncer;
 };
 
-const SYNC_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const SYNC_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
 class Syncer {
   plugin: RNPlugin;
