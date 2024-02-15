@@ -2,11 +2,11 @@ import { RNPlugin } from '@remnote/plugin-sdk';
 import { powerups, bookSlots, highlightSlots } from './consts';
 
 async function registerBookPowerup(plugin: RNPlugin) {
-  await plugin.app.registerPowerup(
-    'Readwise Book',
-    powerups.book,
-    'Represents a book from Readwise',
-    {
+  await plugin.app.registerPowerup({
+    name: 'Readwise Book',
+    code: powerups.book,
+    description: 'Represents a book from Readwise',
+    options: {
       slots: [
         {
           code: bookSlots.bookId,
@@ -30,16 +30,16 @@ async function registerBookPowerup(plugin: RNPlugin) {
           name: 'Tags',
         },
       ],
-    }
-  );
+    },
+  });
 }
 
 async function registerHighlightPowerup(plugin: RNPlugin) {
-  await plugin.app.registerPowerup(
-    'Readwise Highlight',
-    powerups.highlight,
-    'Represents a highlight from Readwise',
-    {
+  await plugin.app.registerPowerup({
+    name: 'Readwise Highlight',
+    code: powerups.highlight,
+    description: 'Represents a highlight from Readwise',
+    options: {
       slots: [
         {
           code: highlightSlots.highlightId,
@@ -52,11 +52,11 @@ async function registerHighlightPowerup(plugin: RNPlugin) {
         },
         {
           code: highlightSlots.note,
-          name: "Note",
-        }
+          name: 'Note',
+        },
       ],
-    }
-  );
+    },
+  });
 }
 
 export async function registerPowerups(plugin: RNPlugin) {
