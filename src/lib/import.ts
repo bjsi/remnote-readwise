@@ -113,14 +113,20 @@ export async function convertToRichTextArray(plugin: RNPlugin, text: string) {
     // Add the non-highlighted substring before the highlighted substring to the array
     const preMatchString = str.slice(0, match.index);
     if (preMatchString.length > 0) {
-      highlightedStringArray.push(preMatchString);
+      highlightedStringArray.push(...(await plugin.richText.parseFromMarkdown(preMatchString)));
     }
 
     // Add the highlighted substring to the array as an object with the highlighted string as the value of the "highlightedString" property
     const matchString = match[1];
     if (matchString.length > 0) {
+      const matchStringRichText = await plugin.richText.parseFromMarkdown(matchString);
       highlightedStringArray = highlightedStringArray.concat(
-        await plugin.richText.text(matchString, ['Yellow']).value()
+        await plugin.richText.applyTextFormatToRange(
+          matchStringRichText,
+          0,
+          matchString.length,
+          'Yellow'
+        )
       );
     }
 
@@ -129,7 +135,7 @@ export async function convertToRichTextArray(plugin: RNPlugin, text: string) {
   }
 
   // Add the remaining non-highlighted substring to the array
-  highlightedStringArray.push(str);
+  highlightedStringArray.push(...(await plugin.richText.parseFromMarkdown(str)));
 
   return highlightedStringArray;
 }
@@ -143,13 +149,16 @@ const findOrCreateHighlight = async (
   let highlightRem: Rem | undefined = allHighlightsById[highlight.id.toString()];
   highlightRem = highlightRem ? highlightRem : await plugin.rem.createRem();
   if (!highlightRem) {
-    return { success: false, error: 'Could not create highlight rem for book: ' + bookRem.text[0] };
+    return {
+      success: false,
+      error: 'Could not create highlight rem for book: ' + bookRem.text?.[0],
+    };
   }
   const parent = await plugin.rem.findByName(['Highlights'], bookRem._id);
   if (!parent) {
     return {
       success: false,
-      error: 'Could not find highlights parent for book: ' + bookRem.text[0],
+      error: 'Could not find highlights parent for book: ' + bookRem.text?.[0],
     };
   }
   highlightRem.setParent(parent!._id);
@@ -162,7 +171,7 @@ const findOrCreateHighlight = async (
       highlight.id.toString(),
     ]);
   } else {
-    return { success: false, error: `Highlight for book ${bookRem.text[0]} has no id` };
+    return { success: false, error: `Highlight for book ${bookRem.text?.[0]} has no id` };
   }
   if (highlight.note) {
     highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.note, [highlight.note]);
