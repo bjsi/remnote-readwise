@@ -179,10 +179,6 @@ const findOrCreateHighlight = async (
   }
 
   if (highlight.tags && highlight.tags.length > 0) {
-    // highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.tags, [
-    //   highlight.tags.map((x) => x.name).join(', '),
-    // ]);
-
     for (const tag of highlight.tags) {
       const tagRem = await findOrCreateTopLevelRem(plugin, tag.name);
       if (tagRem) {
