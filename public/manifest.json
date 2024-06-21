@@ -1,7 +1,8 @@
 {
   "author": "Alok singh",
   "name": "Readwise Sync Fork with Dates",
-  "description": "Sync your Readwise highlights with RemNote",
+  "description": "Sync your Readwise highlights with RemNote, with dates",
+  "unlisted": true,
   "enableOnMobile": true,
   "id": "alok-remnote-readwise-fork",
   "manifestVersion": 1,
