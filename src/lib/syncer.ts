@@ -97,7 +97,9 @@ class Syncer {
    * If runImmediately is true, ignore the current sync timeout and run immediately.
    */
   public async syncLatest(runImmediately = false) {
+    this.log(`Running sync latest command with runImmediately=${runImmediately}`, runImmediately);
     const lastSync = await this.plugin.storage.getSynced<string>(storage.lastSync);
+    this.log(`Last sync: ${lastSync}`, runImmediately);
     if (!lastSync) {
       return;
     } else if (runImmediately || (await this.shouldRunPeriodicSync())) {
@@ -113,6 +115,7 @@ class Syncer {
     ignoreLastSync?: boolean;
     notify?: boolean;
     showModal?: boolean;
+    runImmediately?: boolean;
   }) => {
     const apiKey = await this.getAPIKey();
     if (!apiKey) {
@@ -127,7 +130,7 @@ class Syncer {
     } else if (!(await this.plugin.kb.isPrimaryKnowledgeBase())) {
       clearTimeout(this.timeout);
       this.timeout = setTimeout(() => this.syncLatest(), SYNC_INTERVAL);
-      this.log('Skipping sync - not primary KB');
+      this.log('Skipping sync - not primary KB', opts.runImmediately);
       return;
     }
     const lastSync = opts.ignoreLastSync ? undefined : await this.getLastSync();
@@ -137,7 +140,7 @@ class Syncer {
       if (result.success) {
         const books = result.data;
         const total = books.reduce((acc, b) => acc + b.highlights.length, 0);
-        this.log(`Found ${books.length} books with ${total} highlights.`);
+        this.log(`Found ${books.length} books with ${total} highlights.`, opts.runImmediately);
         if (books && books.length > 0) {
           await this.updateSyncError('');
           await this.updateSyncProgress(0);
@@ -151,14 +154,17 @@ class Syncer {
             !!lastSync
           );
           if (result.success) {
-            this.log(`Successfully imported ${result.data} books and highlights.`, !!opts.notify);
+            this.log(
+              `Successfully imported ${result.data} books and highlights.`,
+              !!opts.notify || opts.runImmediately
+            );
             await this.updateLastSync();
           } else {
             this.log('Failed to import books and highlights: ' + result.error, true);
             await this.updateSyncError(result.error);
           }
         } else {
-          this.log('No new books or highlights to import.', !!opts.notify);
+          this.log('No new books or highlights to import.', !!opts.notify || opts.runImmediately);
         }
       } else {
         if (result.error == 'auth') {
