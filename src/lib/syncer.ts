@@ -135,6 +135,7 @@ class Syncer {
     }
     const lastSync = opts.ignoreLastSync ? undefined : await this.getLastSync();
     try {
+      this.log('Syncing Readwise highlights...', opts.runImmediately);
       this.isSyncing = true;
       const result = await getReadwiseExportsSince(apiKey, lastSync?.toISOString());
       if (result.success) {
