@@ -4,6 +4,7 @@ import { log } from './log';
 import { Either } from './types/either';
 import { Highlight, ReadwiseBook } from './types/readwise';
 import { addLinkAsSource } from './utils';
+import { format } from 'date-fns';
 
 const findBookParentRem = async (plugin: RNPlugin) => {
   return await plugin.rem.findByName(['Readwise Books'], null);
@@ -178,10 +179,6 @@ const findOrCreateHighlight = async (
   }
 
   if (highlight.tags && highlight.tags.length > 0) {
-    // highlightRem.setPowerupProperty(powerups.highlight, highlightSlots.tags, [
-    //   highlight.tags.map((x) => x.name).join(', '),
-    // ]);
-
     for (const tag of highlight.tags) {
       const tagRem = await findOrCreateTopLevelRem(plugin, tag.name);
       if (tagRem) {
@@ -191,6 +188,14 @@ const findOrCreateHighlight = async (
   }
   if (highlight.readwise_url) {
     addLinkAsSource(plugin, highlightRem, highlight.readwise_url);
+  }
+  // Add date tag to highlight for Daily Document, to ground users in time.
+  if (highlight.highlighted_at) {
+    const dateString = format(new Date(highlight.highlighted_at), 'MMMM do, yyyy'); // 'December 23rd, 2022'
+    const dateTagRem = await findOrCreateTopLevelRem(plugin, dateString);
+    if (dateTagRem) {
+      highlightRem.addTag(dateTagRem);
+    }
   }
   return { success: true, data: highlightRem };
 };

@@ -1,9 +1,10 @@
 {
-  "author": "Jamesb",
-  "name": "Readwise Sync",
-  "description": "Sync your Readwise highlights with RemNote",
+  "author": "Alok singh",
+  "name": "Readwise Sync Fork with Dates",
+  "description": "Sync your Readwise highlights with RemNote, with dates",
+  "unlisted": true,
   "enableOnMobile": true,
-  "id": "Jamesb-qb7y5il",
+  "id": "alok-remnote-readwise-fork",
   "manifestVersion": 1,
   "repoUrl": "https://github.com/bjsi/remnote-readwise",
   "version": {
