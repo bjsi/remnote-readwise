@@ -57,7 +57,11 @@ const findOrCreateBookRem = async (
       };
     }
     await highlightsRem.setParent(bookRem._id);
-    if (book.title) {
+    if (
+      book.title &&
+      // don't overwrite if user edited
+      (await plugin.richText.empty(bookRem.text || []))
+    ) {
       bookRem.setText([book.title]);
     }
     await bookRem.addPowerup(powerups.book);
@@ -162,7 +166,11 @@ const findOrCreateHighlight = async (
     };
   }
   highlightRem.setParent(parent!._id);
-  if (highlight.text) {
+  if (
+    highlight.text &&
+    // don't overwrite if user edited
+    (await plugin.richText.empty(highlightRem.text || []))
+  ) {
     highlightRem.setText(await convertToRichTextArray(plugin, highlight.text));
   }
   await highlightRem.addPowerup(powerups.highlight);
